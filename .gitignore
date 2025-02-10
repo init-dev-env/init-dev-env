@@ -1,0 +1,23 @@
+/TempDir/
+/GUI/
+/UI/
+/UI_bak/
+/Logs/
+/temp*.*
+/te mp*.*
+/*.7z
+/*.zip
+/FtpSUploader.cs
+7z*.exe
+/InitialKit/PHPDesktopArchiveRepack.cmd_ResultMemo.txt
+phpdesktop-chrome-*-php-*.*
+/InitialKit/*.7z
+/InitialKit/*.zip
+/InitialKit/dist/*.7z
+/InitialKit/dist/*.zip
+/InitialKit/dist2/*.7z
+/InitialKit/dist2/*.zip
+/_Make-Archive_*.*
+/InitialKit/___init.memo.txt
+/_Git_Init_Memo.txt
+/InitialKit/ResourceHacker.ini
