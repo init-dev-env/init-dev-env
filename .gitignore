@@ -21,3 +21,5 @@ phpdesktop-chrome-*-php-*.*
 /InitialKit/___init.memo.txt
 /_Git_Init_Memo.txt
 /InitialKit/ResourceHacker.ini
+!/Lib/7za.exe
+
