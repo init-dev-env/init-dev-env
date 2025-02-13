@@ -1,5 +1,5 @@
 # =+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=
-# =-=-= Cliborをダウンロード・インストール  =-=-=
+# =-=-= HotkeyPをダウンロード・インストール =-=-=
 # =+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=
 
 # ==== 初期設定 ====
@@ -19,7 +19,7 @@ Start-Sleep -Milliseconds 300
 Clear-Host
 Write-Host -NoNewLine ([char]0x1B + "[0d")
 Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+="
-Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=-=-=" -NoNewLine;Write-Host -ForegroundColor Yellow " Cliborをダウンロード・インストール  " -NoNewLine;Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=-=-="
+Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=-=-=" -NoNewLine;Write-Host -ForegroundColor Yellow " HotkeyPをダウンロード・インストール " -NoNewLine;Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=-=-="
 Write-Host -ForegroundColor Cyan -BackgroundColor DarkBlue "=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=-=+=`r`n"
 
 Start-Sleep -Milliseconds 1250
@@ -264,17 +264,11 @@ function Download-InstallArtifact {
     $InstallArtifactFileName = $InstallArtifactFileName.Replace("{VersionWithoutDot}", $TargetVersionString.Replace(".", ""))
     $InstallArtifactFileName = $InstallArtifactFileName.Replace("{Version}", $TargetVersionString)
 
-    # 追加資材のファイル名
-    $AdditionalArtifactFileName = $Config["AdditionalArtifactFileName"]
-
     # インストール資材のダウンロード後のローカルディスク上のファイルパス
     $LocalDownloadDirPath = Join-Path $Config["LocalDownloadRootFolderPath"] $Config["DownloadFolderName"]
 
     # インストール資材のダウンロード先のファイルパス
     $InstallArtifactFilePath = Join-Path $LocalDownloadDirPath $InstallArtifactFileName
-
-    # 追加資材のダウンロード先のファイルパス
-    $AdditionalArtifactFilePath = Join-Path $LocalDownloadDirPath $AdditionalArtifactFileName
 
     # インストール資材のダウンロード先フォルダーが存在しなければ作成する
     if (-not (Test-Path $LocalDownloadDirPath -PathType Container)) {
@@ -285,89 +279,64 @@ function Download-InstallArtifact {
     $InstallArtifactDownloadURL = $Config["InstallArtifactDownloadURL"]
     $InstallArtifactDownloadURL = $InstallArtifactDownloadURL.Replace("{InstallArtifactFileName}", $InstallArtifactFileName)
 
-    # 追加資材のダウンロード元URL
-    $AdditionalArtifactDownloadURL = $Config["AdditionalArtifactDownloadURL"]
-    $AdditionalArtifactDownloadURL = $AdditionalArtifactDownloadURL.Replace("{AdditionalArtifactFileName}", $AdditionalArtifactFileName)
-
     # ==== ダウンロード処理 ====
     # .NET FrameworkのSystem.Net.WebClientクラスのインスタンスを生成
     $WebClient = New-Object WebClient
 
     # ループ制御
-    for ($FileIndex = 1; $FileIndex -le 2; $FileIndex++) {
-        if ($FileIndex -eq 1) {
-            $ArtifactDownloadURL = $InstallArtifactDownloadURL
-            $ArtifactDownloadFilePath = $InstallArtifactFilePath
-            $ArtifactDisplayName = "インストール資材"
-        } else {
-            $ArtifactDownloadURL = $AdditionalArtifactDownloadURL
-            $ArtifactDownloadFilePath = $AdditionalArtifactFilePath
-            $ArtifactDisplayName = "追加資材"
-        }
-        $AdditionalArtifactDownloadSuccess = $False
-        $InLoopFlag = $True
-        $LoopCount = 0
-        while ($InLoopFlag) {
-            # ループは基本的に1回で抜ける想定
-            $LoopCount++
-            $InLoopFlag = $False
-            try {
-                # ダウンロード
-                Write-Log "情報: ${ArtifactDisplayName}のダウンロードを開始します。"
-                Start-Sleep -Milliseconds 800
-                Write-Log "情報:  - ダウンロード元URL: $ArtifactDownloadURL"
-                Start-Sleep -Milliseconds 400
-                Write-Log "情報:  - ダウンロード先パス: $ArtifactDownloadFilePath"
-                Start-Sleep -Milliseconds 800
-                $WebClient.DownloadFile($ArtifactDownloadURL, $ArtifactDownloadFilePath)
+    $InLoopFlag = $True
+    $LoopCount = 0
+    while ($InLoopFlag) {
+        # ループは基本的に1回で抜ける想定
+        $LoopCount++
+        $InLoopFlag = $False
+        try {
+            # ダウンロード
+            Write-Log "情報: インストール資材のダウンロードを開始します。"
+            Start-Sleep -Milliseconds 800
+            Write-Log "情報:  - ダウンロード元URL: $InstallArtifactDownloadURL"
+            Start-Sleep -Milliseconds 400
+            Write-Log "情報:  - ダウンロード先パス: $InstallArtifactFilePath"
+            Start-Sleep -Milliseconds 800
+            $WebClient.DownloadFile($InstallArtifactDownloadURL, $InstallArtifactFilePath)
 
-                # ダウンロードしたファイルが存在するかチェック
-                if (-not (Test-Path $ArtifactDownloadFilePath -PathType Leaf)) {
-                    throw "エラー: ${ArtifactDisplayName}のダウンロードに失敗しました。"
-                }
+            # ダウンロードしたファイルが存在するかチェック
+            if (-not (Test-Path $InstallArtifactFilePath -PathType Leaf)) {
+                throw "警告: インストール資材のダウンロードに失敗しました。"
             }
-            catch {
-                # BXO判定
-                if ($Env:ComputerName.StartsWith("B063")) {
-                    # プロキシ認証情報の入力を促す
-                    [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
-                    if (-not [String]::IsNullOrWhiteSpace($Credential.UserName)) {
-                        [WebRequest]::DefaultWebProxy = [WebRequest]::GetSystemWebProxy()
-                        [WebRequest]::DefaultWebProxy.Credentials = $Credential
-                    } else {
-                        Write-Log "情報: プロキシ認証のユーザー名とパスワードの入力がキャンセルされました。"
-                        Start-Sleep -Milliseconds 1250
-                    }
-                    # ループを継続させる
-                    if ($LoopCount -lt 2) {
-                        $InLoopFlag = $True
-                    }
+        }
+        catch {
+            # BXO判定
+            if ($Env:ComputerName.StartsWith("B063")) {
+                # プロキシ認証情報の入力を促す
+                [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
+                if (-not [String]::IsNullOrWhiteSpace($Credential.UserName)) {
+                    [WebRequest]::DefaultWebProxy = [WebRequest]::GetSystemWebProxy()
+                    [WebRequest]::DefaultWebProxy.Credentials = $Credential
+                } else {
+                    Write-Log "情報: プロキシ認証のユーザー名とパスワードの入力がキャンセルされました。"
+                    Start-Sleep -Milliseconds 1250
+                }
+                # ループを継続させる
+                if ($LoopCount -lt 2) {
+                    $InLoopFlag = $True
                 }
             }
         }
+    }
 
-        # ダウンロードしたインストール資材ファイルが存在するかチェック
-        if (Test-Path $ArtifactDownloadFilePath -PathType Leaf) {
-            Write-Log "情報: ${ArtifactDisplayName}のダウンロードが完了しました。"
-            Start-Sleep -Milliseconds 1250
-            if ($FileIndex -eq 2) {
-                return [PSCustomObject]@{
-                    IsFailed = $False
-                }
-            }
-        } else {
-            Write-Log "エラー: ${ArtifactDisplayName}のダウンロードに失敗しました。[$DownloadURL]"
-            Start-Sleep -Milliseconds 1250
-            if ($FileIndex -eq 1) {
-                return [PSCustomObject]@{
-                    IsFailed = $True
-                }
-            }
-            if ($FileIndex -eq 2) {
-                return [PSCustomObject]@{
-                    IsFailed = $False
-                }
-            }
+    # ダウンロードしたインストール資材ファイルが存在するかチェック
+    if (Test-Path $InstallArtifactFilePath -PathType Leaf) {
+        Write-Log "情報: インストール資材のダウンロードが完了しました。"
+        Start-Sleep -Milliseconds 1250
+        return [PSCustomObject]@{
+            IsFailed = $False
+        }
+    } else {
+        Write-Log "エラー: インストール資材のダウンロードに失敗しました。[$InstallArtifactDownloadURL]"
+        Start-Sleep -Milliseconds 1250
+        return [PSCustomObject]@{
+            IsFailed = $True
         }
     }
 }
@@ -386,33 +355,18 @@ function Install-Application {
     $InstallArtifactFileName = $InstallArtifactFileName.Replace("{VersionWithoutDot}", $TargetVersionString.Replace(".", ""))
     $InstallArtifactFileName = $InstallArtifactFileName.Replace("{Version}", $TargetVersionString)
 
-    # 追加資材のファイル名
-    $AdditionalArtifactFileName = $Config["AdditionalArtifactFileName"]
-
     # インストール資材のダウンロード先のファイルパス
     $InstallArtifactFilePath = Join-Path $LocalDownloadDirPath $InstallArtifactFileName
 
-    # インストール資材のインストール先フォルダーパス
+    # インストール先フォルダーパス
     $InstallDestinationFolderPath = $Config["InstallDestinationFolderPath"]
     $InstallDestinationFolderRealPath = $InstallDestinationFolderPath
     if ($Config["InstallDestinationFolderTargetIsParentFlag"] -eq "True") {
         $InstallDestinationFolderRealPath = Split-Path $InstallDestinationFolderPath -Parent
     }
 
-    # 追加資材のダウンロード先のファイルパス
-    $AdditionalArtifactFilePath = Join-Path $LocalDownloadDirPath $AdditionalArtifactFileName
-
-    # 追加資材のインストール先フォルダーパス
-    $AdditionalInstallDestinationFolderPath = $Config["InstallDestinationFolderPath"]
-    $AdditionalInstallDestinationFolderRealPath = $AdditionalInstallDestinationFolderPath
-
-    # インストール先フォルダーパスを先に作成
-    if (-not (Test-Path $InstallDestinationFolderPath -PathType Container)) {
-        New-Item -ItemType Directory -Path $InstallDestinationFolderPath | Out-Null
-    }
-
     # 実行中のプロセスが存在すれば終了させる
-    (Get-Process -Name Clibor -ErrorAction SilentlyContinue) | ForEach-Object { . $_.Path /xt }
+    (Get-Process -Name HotkeyP -ErrorAction SilentlyContinue) | ForEach-Object { Stop-Process $_ -Force }
 
     # ==== 7-Zipで圧縮ファイルを展開 ====
     $SevenZipExecutablePath = Get-SevenZipExecutablePath
@@ -421,37 +375,23 @@ function Install-Application {
         Write-Log "エラー: 7-Zipの実行ファイルが見つかりません。"
         End-ThisScriptAsFailure
     }
-    for ($FileIndex = 1; $FileIndex -le 2; $FileIndex++) {
-        if ($FileIndex -eq 1) {
-            $ArtifactFilePath = $InstallArtifactFilePath
-            $DestinationFilePath = $InstallDestinationFolderRealPath
-            $ArtifactDisplayName = "インストール資材"
-        } else {
-            $ArtifactFilePath = $AdditionalArtifactFilePath
-            $DestinationFilePath = $AdditionalInstallDestinationFolderRealPath
-            $ArtifactDisplayName = "追加資材"
-        }
-        if (($FileIndex -eq 2) -and (-not (Test-Path $ArtifactFilePath -PathType Leaf))) {
-            continue
-        }
-        Write-Log "情報: インストールを開始します。"
-        Start-Sleep -Milliseconds 800
-        Write-Log "情報:  - ${ArtifactDisplayName}ファイル: $ArtifactFilePath"
-        Start-Sleep -Milliseconds 400
-        Write-Log "情報:  - インストール先フォルダー: $InstallDestinationFolderPath"
-        Start-Sleep -Milliseconds 800
-        Write-Log "情報: ${ArtifactDisplayName}展開中..."
-        Start-Sleep -Milliseconds 100
-        $Exec = Start-Process $SevenZipExecutablePath "x `"$ArtifactFilePath`" -o`"$DestinationFilePath`" -y" -Wait -WindowStyle Hidden -PassThru
-        if ($Exec.ExitCode -ne 0) {
-            Write-Log "エラー: 7-Zipでの展開に失敗しました。(エラーコード: $($Exec.ExitCode))"
-            Start-Sleep -Milliseconds 1250
-            End-ThisScriptAsFailure
-        }
-        Start-Sleep -Milliseconds 400
-        Write-Log "情報: インストールを完了しました。"
+    Write-Log "情報: インストールを開始します。"
+    Start-Sleep -Milliseconds 800
+    Write-Log "情報:  - インストール資材ファイル: $InstallArtifactFilePath"
+    Start-Sleep -Milliseconds 400
+    Write-Log "情報:  - インストール先フォルダー: $InstallDestinationFolderPath"
+    Start-Sleep -Milliseconds 800
+    Write-Log "情報: インストール資材展開中..."
+    Start-Sleep -Milliseconds 100
+    $Exec = Start-Process $SevenZipExecutablePath "x `"$InstallArtifactFilePath`" -o`"$InstallDestinationFolderRealPath`" -y" -Wait -WindowStyle Hidden -PassThru
+    if ($Exec.ExitCode -ne 0) {
+        Write-Log "エラー: 7-Zipでの展開に失敗しました。(エラーコード: $($Exec.ExitCode))"
         Start-Sleep -Milliseconds 1250
+        End-ThisScriptAsFailure
     }
+    Start-Sleep -Milliseconds 400
+    Write-Log "情報: インストールを完了しました。"
+    Start-Sleep -Milliseconds 1250
 
     # インストールされているかチェック
     $VersionCheckResult = Check-VersionIsJustOrNewer -NoOutput
@@ -464,46 +404,26 @@ function Install-Application {
 
 # ==== インストール後の初期設定 ====
 function Do-AfterInstall {
-    # XML設定ファイルを生成・更新
-    Set-DefaultSettingXmlFile
+    # インストール先のフォルダーパス
+    $InstallDestinationFolderPath = $Config["InstallDestinationFolderPath"]
 
-    # 展開されたMigemoライブラリを移動
-    $ExtractedMigemoLibraryFilePath = Join-Path (Join-Path $Config["InstallDestinationFolderPath"] "cmigemo-default-win32") "migemo.dll"
-    $DestinationMigemoLibraryFilePath = Join-Path $Config["InstallDestinationFolderPath"] "migemo.dll"
-    if (Test-Path $ExtractedMigemoLibraryFilePath -PathType Leaf) {
-        if (Test-Path $DestinationMigemoLibraryFilePath -PathType Leaf) {
-            Remove-Item $DestinationMigemoLibraryFilePath -Force
-        }
-        Move-Item $ExtractedMigemoLibraryFilePath $DestinationMigemoLibraryFilePath -Force
-    }
+    # チェック対象のファイルのパス
+    $CheckTargetFilePath = $Config["CheckTargetFilePath"]
+    $CheckTargetFilePath = $CheckTargetFilePath.Replace("{InstallDestinationFolderPath}", $InstallDestinationFolderPath)
 
-    # 展開されたMigemo辞書ファイルのフォルダーを移動
-    $ExtractedMigemoDictionaryFolderPath = Join-Path (Join-Path $Config["InstallDestinationFolderPath"] "cmigemo-default-win32") "dict"
-    $DestinationMigemoDictionaryFolderPath = Join-Path $Config["InstallDestinationFolderPath"] "dict"
-    if (Test-Path $ExtractedMigemoDictionaryFolderPath -PathType Container) {
-        if (Test-Path $DestinationMigemoDictionaryFolderPath -PathType Container) {
-            Remove-Item $DestinationMigemoDictionaryFolderPath -Recurse -Force
-        }
-        Move-Item $ExtractedMigemoDictionaryFolderPath $DestinationMigemoDictionaryFolderPath -Force
-    }
-
-    # 展開されたフォルダーを削除
-    $ExtractedFolderPath = Join-Path $Config["InstallDestinationFolderPath"] "cmigemo-default-win32"
-    if (Test-Path $ExtractedFolderPath -PathType Container) {
-        Remove-Item $ExtractedFolderPath -Recurse -Force
-    }
+    # 変数定義
+    $HotkeyPExecutablePath = $CheckTargetFilePath
 
     # ユーザーごとのスタートアップフォルダーにショートカットを作成
-    $InstallDestinationFolderPath = $Config["InstallDestinationFolderPath"]
     $StartupFolderPath = [Environment]::GetFolderPath("Startup")
-    $ShortcutName = "Clibor"
+    $ShortcutName = "HotkeyP"
     $ShortcutLinkFilePath = Join-Path $StartupFolderPath "$ShortcutName.lnk"
     # 存在しなければ新規に作成
     if (-not (Test-Path $ShortcutLinkFilePath -PathType Leaf)) {
-        $ShortcutTargetPath = Join-Path $InstallDestinationFolderPath "Clibor.exe"
-        $ShortcutArguments = ""
-        $ShortcutDescription = "Cliborの起動"
-        $ShortcutIconPath = Join-Path $InstallDestinationFolderPath "Clibor.exe"
+        $ShortcutTargetPath = $HotkeyPExecutablePath
+        $ShortcutArguments = "0"
+        $ShortcutDescription = "HotkeyPの起動"
+        $ShortcutIconPath = $HotkeyPExecutablePath
         $ShortcutIconIndex = 0
         # WSH(Windows Script Host)のShellオブジェクトを生成
         $WScriptShell = New-Object -ComObject WScript.Shell
@@ -522,6 +442,7 @@ function Do-AfterInstall {
 
     # 開始
     Start-Process $ShortcutTargetPath -ArgumentList $ShortcutArguments -WorkingDirectory $InstallDestinationFolderPath
+
 }
 
 # ==== 7-Zipの実行ファイルパスを取得する ====
@@ -540,192 +461,6 @@ function Get-SevenZipExecutablePath {
         return "C:\Program Files\7-Zip\7z.exe"
     }
     return $Null
-}
-
-# ==== Cliborの設定XMLファイルを生成する ====
-function Set-DefaultSettingXmlFile {
-    # インストール先のフォルダーパス
-    $InstallDestinationFolderPath = $Config["InstallDestinationFolderPath"]
-
-    # Cliborの設定XMLファイルのパス
-    $SettingXmlFilePath = Join-Path $InstallDestinationFolderPath "Clibor.xml"
-
-    # バージョン
-    $Version = $Config["TargetVersion"]
-
-    # 変更フラグ
-    $IsChanged = $False
-
-    # 設定ファイルが存在しない場合は一度起動させて終了させる
-    if (-not (Test-Path $SettingXmlFilePath -PathType Leaf)) {
-        $CliborExeFilePath = Join-Path $InstallDestinationFolderPath "Clibor.exe"
-        if (Test-Path $CliborExeFilePath -PathType Leaf) {
-            $LoopLimit = 10
-            while (($LoopLimit -gt 0) -and (-not (Test-Path $SettingXmlFilePath -PathType Leaf))) {
-                $LoopLimit--
-                try {
-                    $Process = Start-Process $CliborExeFilePath -PassThru
-                    $Process.WaitForInputIdle()
-                    Start-Sleep -Milliseconds (10 * (11 - $LoopLimit))
-                    Stop-Process -InputObject $Process -Force -ErrorAction SilentlyContinue
-                } catch {
-                    Start-Sleep -Milliseconds (20 * (11 - $LoopLimit))
-                }
-            }
-        }
-    }
-
-    # 起動中のプロセスがあれば終了させる
-    $Process = Get-Process -Name "Clibor" -ErrorAction SilentlyContinue
-    if ($Process -ne $Null) {
-        Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-    }
-
-    # 設定ファイルが既に存在すれば開く
-    if (-not (Test-Path $SettingXmlFilePath -PathType Leaf)) {
-        # 空のXMLオブジェクトを生成
-        $Xml = New-Object System.Xml.XmlDocument
-
-        # XML宣言の追加
-        $Declaration = $Xml.CreateXmlDeclaration("1.0", "UTF-16", $Null)
-        $Xml.AppendChild($Declaration) | Out-Null
-
-        $IsChanged = $True
-    } else {
-        # XML宣言の属性がversionとencodingの順でないと読み込みエラーになるため、一度読み込んで文字列をパースさせる
-        $XmlContent = Get-Content $SettingXmlFilePath -Encoding Unicode
-        $XmlContent = $XmlContent.Replace("<?xml encoding=`"UTF-16`" version=`"1.0`"?>", "<?xml version=`"1.0`" encoding=`"UTF-16`"?>")
-
-        $Xml = [Xml]($XmlContent)
-    }
-
-    # もしルート要素が存在しないならば、ルート要素の作成。存在するならば取得する
-    if ($Xml.DocumentElement -eq $Null) {
-        $Root = $Xml.CreateElement("root")
-        $Xml.AppendChild($Root) | Out-Null
-
-        $IsChanged = $True
-    } else {
-        $Root = $Xml.DocumentElement
-    }
-
-    # もしCLIBOR要素が存在しないならば、CLIBOR要素の作成。存在するならば取得する
-    if ($Root.CLIBOR -eq $Null) {
-        $Clibor = $Xml.CreateElement("CLIBOR")
-        $Root.AppendChild($Clibor) | Out-Null
-
-        $IsChanged = $True
-    } else {
-        $Clibor = $Root.CLIBOR
-    }
-
-    # 子要素の作成と追加
-    $Elements = @{
-        CLIBOR_VER                = "Clibor ver${Version}"
-        # 基本動作
-        AUTOPASTEWAIT             = "100"
-        # 基本動作/メイン画面
-        AP_ABVALUE                = "242"
-        FORMWIDTH                 = "640"
-        YOHAKU                    = "2"
-        MAINLINECNT               = "128"
-        MAINTABHIDE               = "-1"
-        MAINPAGEHIDE              = "-1"
-        MAINSHADOW                = "-1"
-        WAKULINE                  = "1"
-        # 基本動作/フォント
-        MAINFONTNAME              = "InGen UI N"
-        MAINFONTSIZE              = "8"
-        TTIPFONTNAME              = "InGen UI N"
-        TTIPFONTSIZE              = "8"
-        MAINSEARCHFONTNAME        = "PlemolJP"
-        MAINSEARCHFONTSIZE        = "8"
-        MAINTABFONTNAME           = "Yu Gothic UI"
-        MAINTABFONTSIZE           = "8"
-        MAINTABNOFONTNAME         = "Yu Gothic UI"
-        MAINTABNOFONTSIZE         = "8"
-        MAINPGFONTNAME            = "Yu Gothic UI"
-        MAINPGFONTSIZE            = "8"
-        TEIKEIEDITFONTNAME        = "InGen UI N"
-        TEIKEIEDITFONTSIZE        = "8"
-        MAINMENUFONTNAME          = "InGen UI N"
-        MAINMENUFONTSIZE          = "8"
-        # クリップボード
-        HIST_SIZE                 = "1024"
-        CLIPPRICNT                = "30"
-        # クリップボード/保存
-        AUTOCLIPSAVETIME          = "600"
-        BACKUP_CLIP               = "-1"
-        BACKUP_CLIP_CNT           = "2"
-        # クリップボード/更新
-        CLIPDELAY                 = "40"
-        CLIPIGNORE                = "300"
-        # 定型文
-        BACKUP_TEIKEI             = "-1"
-        BACKUP_TEIKEI_CNT         = "2"
-        # 画面表示制御
-        MAINFOCUS                 = "-1"
-        SEARCH_ONOFF              = "3"
-        # 配色
-        BACK_COLOR                = '$00FFF9F2'
-        SLTBACK_COLOR             = '$00A85400'
-        BACK_COLORF               = '$00313131'
-        SLTBACK_COLORF            = "clWhite"
-        LINE_COLOR                = '$00793D00'
-        LINEHYOJI_COLOR           = '$00AA5500'
-        BACK_COLOR2               = '$00FFF4E8'
-        BACK_COLORF2              = '$00383838'
-        # ホットキー
-        HOTKEYFLG                 = "0"
-        HOTKEYSYUSYOKU            = "Ctrl+Shift"
-        HOTKEYKEY                 = "Q"
-        # バージョン
-        AUTO_CHECK_UPDATE         = "0"
-    }
-    $SubElements = @{
-        # 検索
-        MIGEMO                    = "-1"
-        MIGEMOPRIORITY            = "3"
-        MIGEMOPRIORITY_T          = "3"
-        # 検索/検索ボックス
-        MAINSEARCHDETAIL          = "3"
-        MAINSEARCHDETAIL_T        = "3"
-    }
-    if (Test-Path (Join-Path $InstallDestinationFolderPath "migemo.dll") -PathType Leaf) {
-        # SubElementsの内容をElementsに追加
-        $Elements += $SubElements
-    }
-    foreach ($ElementName in $Elements.Keys) {
-        $Value = $Null
-        if ($Clibor.$ElementName -eq $Null) {
-            $Element = $Xml.CreateElement($ElementName)
-            $Clibor.AppendChild($Element) | Out-Null
-        } else {
-            $Element = $Clibor[$ElementName]
-            if ($Element -eq $Null) {
-                Write-Host "警告: $ElementName の要素が取得できませんでした。"
-            }
-            $Value = $Element.InnerText
-        }
-        if ($Value -ne $Elements[$ElementName]) {
-            $NewValue = $Elements[$ElementName]
-            if (($NewValue -eq "InGen UI N") -or ($NewValue -eq "PlemolJP")) {
-                $NewValue = "Yu Gothic UI"
-            }
-            try {
-                $Element.InnerText = $NewValue
-            } catch {
-                Write-Host "警告: $ElementName の値の設定に失敗しました。"
-            }
-            $IsChanged = $True
-        }
-    }
-
-    # XMLをファイルに保存
-    if ($IsChanged) {
-        $Xml.Save($SettingXmlFilePath)
-        Write-Log "情報: Cliborの設定XMLファイルを更新しました。[$SettingXmlFilePath]"
-    }
 }
 
 # ==== レジストリの値の型(種類)の定数値を定義 ====
@@ -1133,6 +868,6 @@ function End-ThisScriptAsFailure {
     exit 1
 }
 
-Initialize-Log -LogId "Clibor"
+Initialize-Log -LogId "OoLogIdoO"
 
 Main

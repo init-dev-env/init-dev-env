@@ -39,6 +39,12 @@ function Main {
             "Comment" = "#"
             "TemplateFileName" = "888_Template-PowerShellScript.ps1"
         }
+        @{
+            "Kind" = "設定ファイル"
+            "Extension" = "ini"
+            "Comment" = "#"
+            "TemplateFileName" = "888_Template-Config.ini"
+        }
     )
 
     $Result = $Null
@@ -87,7 +93,12 @@ function Main {
             $Comment = $FileType.Comment
             $TemplateFileName = $FileType.TemplateFileName
 
-            $FileName = $SequenceNumber + "_" + $SoftwareName + "_" + $FileNameTail + "." + $Extension
+            if ($Kind -eq "設定ファイル") {
+                $Postfix = "_≪Config≫"
+            } else {
+                $Postfix = ""
+            }
+            $FileName = $SequenceNumber + "_" + $SoftwareName + "_" + $FileNameTail + $Postfix + "." + $Extension
 
             Make-File $FileName $TitleLineInfo $Comment $TemplateFileName $TemplateNumber
         }

@@ -435,8 +435,9 @@ function Do-AfterInstall {
     try {
         $ProcessInfo = Start-Process (Join-Path $InstallDestinationFolderPath "bin\bash.exe") "-c 'sleep 3; exit'" -Verb RunAs -PassThru
         Write-Log "情報: Git-Bashの終了待機中..."
-        Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds 2000
         $ProcessInfo.WaitForExit()
+        Start-Sleep -Milliseconds 500
     } finally {
         Pop-Location
         Write-Log "情報: Git-Bashの起動確認が完了しました。"
@@ -446,6 +447,10 @@ function Do-AfterInstall {
 
 # ==== 7-Zipの実行ファイルパスを取得する ====
 function Get-SevenZipExecutablePath {
+    # Libフォルダーに存在する場合は優先する
+    if (Test-Path (Join-Path $PSScriptRoot "Lib\7za.exe") -PathType Leaf) {
+        return (Join-Path $PSScriptRoot "Lib\7za.exe")
+    }
     # パスが通っている箇所から探す
     $SevenZipExecutablePath = Get-Command 7z.exe -ErrorAction SilentlyContinue
     if ($SevenZipExecutablePath -ne $Null) {
@@ -705,7 +710,9 @@ function Add-Path {
         $PathList = [List[String]]::New()
         foreach ($PathItem in $PathEnvValue.Value.Split(';')) {
             $PathItem = $PathItem.Trim()
-            $PathList.Add($PathItem)
+            if (-not ([String]::IsNullOrWhiteSpace($PathItem))) {
+                $PathList.Add($PathItem)
+            }
         }
     } else {
         $PathList = [List[String]]::New()

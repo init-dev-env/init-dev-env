@@ -438,69 +438,73 @@ function Do-AfterInstall {
     $EntryName = "Executable"
     $EntryValue = "$InstallDestinationFolderPath\WinMergeU.exe"
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_SZ
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "ContextMenuEnabled"
     $EntryValue = 7
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $RegistryKey = "HKCU:\Software\Thingamahoochie\WinMerge\Locale"
     $EntryName = "LanguageId"
     $EntryValue = 1041
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $RegistryKey = "HKCU:\Software\Thingamahoochie\WinMerge\Backup"
     $EntryName = "EnableFile"
     $EntryValue = 0
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $RegistryKey = "HKCU:\Software\Thingamahoochie\WinMerge\Settings"
     $EntryName = "ColorScheme"
     $EntryValue = "Solarized Light"
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_SZ
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "DiffAlgorithm"
     $EntryValue = 3
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "IgnoreEol"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "CompMethod2"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "WordWrap"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "ViewLineNumbers"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "ViewEOL"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 
     $EntryName = "ViewWhitespace"
     $EntryValue = 1
     Set-RegistryValue $RegistryKey $EntryName $EntryValue $REG_DWORD
-    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$]で設定しました。"
+    Write-Log "情報: レジストリキー[$($RegistryKey.Replace("HKCU:", "HKEY_CURRENT_USER"))]のエントリ[$EntryName]を値[$EntryValue]で設定しました。"
 }
 
 # ==== 7-Zipの実行ファイルパスを取得する ====
 function Get-SevenZipExecutablePath {
+    # Libフォルダーに存在する場合は優先する
+    if (Test-Path (Join-Path $PSScriptRoot "Lib\7za.exe") -PathType Leaf) {
+        return (Join-Path $PSScriptRoot "Lib\7za.exe")
+    }
     # パスが通っている箇所から探す
     $SevenZipExecutablePath = Get-Command 7z.exe -ErrorAction SilentlyContinue
     if ($SevenZipExecutablePath -ne $Null) {
@@ -760,7 +764,9 @@ function Add-Path {
         $PathList = [List[String]]::New()
         foreach ($PathItem in $PathEnvValue.Value.Split(';')) {
             $PathItem = $PathItem.Trim()
-            $PathList.Add($PathItem)
+            if (-not ([String]::IsNullOrWhiteSpace($PathItem))) {
+                $PathList.Add($PathItem)
+            }
         }
     } else {
         $PathList = [List[String]]::New()
