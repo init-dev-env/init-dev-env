@@ -306,8 +306,10 @@ function Download-InstallArtifact {
             }
         }
         catch {
-            # BXO判定
-            if ($Env:ComputerName.StartsWith("B063")) {
+            # プロキシ判定
+            $Uri = New-Object Uri $InstallArtifactDownloadURL
+            $ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+            if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
                 # プロキシ認証情報の入力を促す
                 [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
                 if (-not [String]::IsNullOrWhiteSpace($Credential.UserName)) {

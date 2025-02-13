@@ -327,7 +327,7 @@ function Download-InstallArtifact {
                 }
             }
             catch {
-                # BXO判定
+                # プロキシ判定
                 if ($Env:ComputerName.StartsWith("B063")) {
                     # プロキシ認証情報の入力を促す
                     [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
