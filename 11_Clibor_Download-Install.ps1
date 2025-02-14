@@ -290,84 +290,148 @@ function Download-InstallArtifact {
     $AdditionalArtifactDownloadURL = $AdditionalArtifactDownloadURL.Replace("{AdditionalArtifactFileName}", $AdditionalArtifactFileName)
 
     # ==== ダウンロード処理 ====
-    # .NET FrameworkのSystem.Net.WebClientクラスのインスタンスを生成
-    $WebClient = New-Object WebClient
+    [PSCredential]$ProxyCredential = $Null
+    [Int]$LastSuccessCount = $Null
 
     # ループ制御
-    for ($FileIndex = 1; $FileIndex -le 2; $FileIndex++) {
-        if ($FileIndex -eq 1) {
-            $ArtifactDownloadURL = $InstallArtifactDownloadURL
-            $ArtifactDownloadFilePath = $InstallArtifactFilePath
-            $ArtifactDisplayName = "インストール資材"
-        } else {
-            $ArtifactDownloadURL = $AdditionalArtifactDownloadURL
-            $ArtifactDownloadFilePath = $AdditionalArtifactFilePath
-            $ArtifactDisplayName = "追加資材"
-        }
-        $AdditionalArtifactDownloadSuccess = $False
-        $InLoopFlag = $True
-        $LoopCount = 0
-        while ($InLoopFlag) {
-            # ループは基本的に1回で抜ける想定
-            $LoopCount++
-            $InLoopFlag = $False
-            try {
-                # ダウンロード
-                Write-Log "情報: ${ArtifactDisplayName}のダウンロードを開始します。"
-                Start-Sleep -Milliseconds 800
-                Write-Log "情報:  - ダウンロード元URL: $ArtifactDownloadURL"
-                Start-Sleep -Milliseconds 400
-                Write-Log "情報:  - ダウンロード先パス: $ArtifactDownloadFilePath"
-                Start-Sleep -Milliseconds 800
-                $WebClient.DownloadFile($ArtifactDownloadURL, $ArtifactDownloadFilePath)
-
-                # ダウンロードしたファイルが存在するかチェック
-                if (-not (Test-Path $ArtifactDownloadFilePath -PathType Leaf)) {
-                    throw "エラー: ${ArtifactDisplayName}のダウンロードに失敗しました。"
+    [Boolean]$InLoopFlag = $True
+    [Int]$LoopCount = 0
+    while ($InLoopFlag) {
+        # ループは基本的に1回で抜ける想定
+        $LoopCount++
+        $InLoopFlag = $False
+        try {
+            # ダウンロード
+            Write-Log "情報: インストール資材のダウンロードを開始します。"
+            Start-Sleep -Milliseconds 800
+            Write-Log "情報:  - ダウンロード元URL: $InstallArtifactDownloadURL"
+            Start-Sleep -Milliseconds 400
+            Write-Log "情報:  - ダウンロード先パス: $InstallArtifactFilePath"
+            Start-Sleep -Milliseconds 800
+            switch ($LoopCount) {
+                1 {
+                    Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage NoProxy
+                    $LastSuccessCount = $LoopCount
                 }
-            }
-            catch {
-                # プロキシ判定
-                if ($Env:ComputerName.StartsWith("B063")) {
-                    # プロキシ認証情報の入力を促す
-                    [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
-                    if (-not [String]::IsNullOrWhiteSpace($Credential.UserName)) {
-                        [WebRequest]::DefaultWebProxy = [WebRequest]::GetSystemWebProxy()
-                        [WebRequest]::DefaultWebProxy.Credentials = $Credential
-                    } else {
-                        Write-Log "情報: プロキシ認証のユーザー名とパスワードの入力がキャンセルされました。"
-                        Start-Sleep -Milliseconds 1250
-                    }
-                    # ループを継続させる
-                    if ($LoopCount -lt 2) {
-                        $InLoopFlag = $True
+                2 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $InstallArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                        Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost"
+                        $LastSuccessCount = $LoopCount
                     }
                 }
+                3 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $InstallArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        # プロキシ認証情報の入力を促す
+                        $ProxyCredential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
+                        if (($ProxyCredential -ne $Null) -and (-not [String]::IsNullOrWhiteSpace($ProxyCredential.UserName))) {
+                            Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                            Write-Log "情報:  - プロキシ認証ユーザー: $($ProxyCredential.UserName)"
+                            Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost" -ProxyCredential $ProxyCredential
+                            $LastSuccessCount = $LoopCount
+                        }
+                    }
+                }
+                Default {}
+            }
+
+            # ダウンロードしたファイルが存在するかチェック
+            if (-not (Test-Path $InstallArtifactFilePath -PathType Leaf)) {
+                throw "警告: インストール資材のダウンロードに失敗しました。"
             }
         }
+        catch {
+            # 既定の回数まではリトライする
+            if ($LoopCount -lt 3) {
+                $InLoopFlag = $True
+            } else {
+                throw $_
+            }
+        }
+    }
 
-        # ダウンロードしたインストール資材ファイルが存在するかチェック
-        if (Test-Path $ArtifactDownloadFilePath -PathType Leaf) {
-            Write-Log "情報: ${ArtifactDisplayName}のダウンロードが完了しました。"
-            Start-Sleep -Milliseconds 1250
-            if ($FileIndex -eq 2) {
-                return [PSCustomObject]@{
-                    IsFailed = $False
+    # ループ制御
+    [Boolean]$InLoopFlag = $True
+    [Int]$LoopCount = $LastSuccessCount - 1
+    while ($InLoopFlag) {
+        # ループは基本的に1回で抜ける想定
+        $LoopCount++
+        $InLoopFlag = $False
+        try {
+            # ダウンロード
+            Write-Log "情報: 追加インストール資材のダウンロードを開始します。"
+            Start-Sleep -Milliseconds 800
+            Write-Log "情報:  - ダウンロード元URL: $AdditionalArtifactDownloadURL"
+            Start-Sleep -Milliseconds 400
+            Write-Log "情報:  - ダウンロード先パス: $AdditionalArtifactFilePath"
+            Start-Sleep -Milliseconds 800
+            switch ($LoopCount) {
+                1 {
+                    Start-BitsTransfer -Source $AdditionalArtifactDownloadURL -Destination $AdditionalArtifactFilePath -ProxyUsage NoProxy
+                    $LastSuccessCount = $LoopCount
                 }
-            }
-        } else {
-            Write-Log "エラー: ${ArtifactDisplayName}のダウンロードに失敗しました。[$DownloadURL]"
-            Start-Sleep -Milliseconds 1250
-            if ($FileIndex -eq 1) {
-                return [PSCustomObject]@{
-                    IsFailed = $True
+                2 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $AdditionalArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                        Start-BitsTransfer -Source $AdditionalArtifactDownloadURL -Destination $AdditionalArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost"
+                        $LastSuccessCount = $LoopCount
+                    }
                 }
-            }
-            if ($FileIndex -eq 2) {
-                return [PSCustomObject]@{
-                    IsFailed = $False
+                3 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $AdditionalArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        # プロキシ認証情報の入力を促す
+                        $ProxyCredential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
+                        if (($ProxyCredential -ne $Null) -and (-not [String]::IsNullOrWhiteSpace($ProxyCredential.UserName))) {
+                            Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                            Write-Log "情報:  - プロキシ認証ユーザー: $($ProxyCredential.UserName)"
+                            Start-BitsTransfer -Source $AdditionalArtifactDownloadURL -Destination $AdditionalArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost" -ProxyCredential $ProxyCredential
+                            $LastSuccessCount = $LoopCount
+                        }
+                    }
                 }
+                Default {}
             }
+
+            # ダウンロードしたファイルが存在するかチェック
+            if (-not (Test-Path $InstallArtifactFilePath -PathType Leaf)) {
+                throw "警告: 追加インストール資材のダウンロードに失敗しました。"
+            }
+        }
+        catch {
+            # 既定の回数まではリトライする
+            if ($LoopCount -lt 3) {
+                $InLoopFlag = $True
+            } else {
+                throw $_
+            }
+        }
+    }
+
+    # ダウンロードしたインストール資材ファイルが存在するかチェック
+    if (Test-Path $InstallArtifactFilePath -PathType Leaf) {
+        Write-Log "情報: 追加インストール資材のダウンロードが完了しました。"
+        Start-Sleep -Milliseconds 1250
+        return [PSCustomObject]@{
+            IsFailed = $False
+        }
+    } else {
+        # 追加インストール資材はダウンロード失敗しても処理を継続する
+        Write-Log "エラー: 追加インストール資材のダウンロードに失敗しました。[$InstallArtifactDownloadURL]"
+        Start-Sleep -Milliseconds 1250
+        return [PSCustomObject]@{
+            IsFailed = $False # $True
         }
     }
 }

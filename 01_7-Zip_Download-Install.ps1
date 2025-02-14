@@ -280,8 +280,7 @@ function Download-InstallArtifact {
     $InstallArtifactDownloadURL = $InstallArtifactDownloadURL.Replace("{InstallArtifactFileName}", $InstallArtifactFileName)
 
     # ==== ダウンロード処理 ====
-    # .NET FrameworkのSystem.Net.WebClientクラスのインスタンスを生成
-    $WebClient = New-Object WebClient
+    [PSCredential]$ProxyCredential = $Null
 
     # ループ制御
     $InLoopFlag = $True
@@ -298,7 +297,35 @@ function Download-InstallArtifact {
             Start-Sleep -Milliseconds 400
             Write-Log "情報:  - ダウンロード先パス: $InstallArtifactFilePath"
             Start-Sleep -Milliseconds 800
-            $WebClient.DownloadFile($InstallArtifactDownloadURL, $InstallArtifactFilePath)
+            switch ($LoopCount) {
+                1 {
+                    Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage NoProxy
+                }
+                2 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $InstallArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                        Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost"
+                    }
+                }
+                3 {
+                    # プロキシ判定
+                    [Uri]$Uri = New-Object Uri $InstallArtifactDownloadURL
+                    [Uri]$ProxyUri = [Net.WebRequest]::GetSystemWebProxy().GetProxy($Uri)
+                    if ($Uri.AbsolutePath -ne $ProxyUri.AbsolutePath) {
+                        # プロキシ認証情報の入力を促す
+                        $ProxyCredential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
+                        if (($ProxyCredential -ne $Null) -and (-not [String]::IsNullOrWhiteSpace($ProxyCredential.UserName))) {
+                            Write-Log "情報:  - プロキシ: $($ProxyUri.AbsolutePath)"
+                            Write-Log "情報:  - プロキシ認証ユーザー: $($ProxyCredential.UserName)"
+                            Start-BitsTransfer -Source $InstallArtifactDownloadURL -Destination $InstallArtifactFilePath -ProxyUsage Override -ProxyList $ProxyUri -ProxyBypass "127.0.0.1", "localhost" -ProxyCredential $ProxyCredential
+                        }
+                    }
+                }
+                Default {}
+            }
 
             # ダウンロードしたファイルが存在するかチェック
             if (-not (Test-Path $InstallArtifactFilePath -PathType Leaf)) {
@@ -306,21 +333,11 @@ function Download-InstallArtifact {
             }
         }
         catch {
-            # プロキシ判定
-            if ($Env:ComputerName.StartsWith("B063")) {
-                # プロキシ認証情報の入力を促す
-                [PSCredential]$Credential = Get-Credential -Message "プロキシ認証のユーザー名とパスワードを入力してください。"
-                if (-not [String]::IsNullOrWhiteSpace($Credential.UserName)) {
-                    [WebRequest]::DefaultWebProxy = [WebRequest]::GetSystemWebProxy()
-                    [WebRequest]::DefaultWebProxy.Credentials = $Credential
-                } else {
-                    Write-Log "情報: プロキシ認証のユーザー名とパスワードの入力がキャンセルされました。"
-                    Start-Sleep -Milliseconds 1250
-                }
-                # ループを継続させる
-                if ($LoopCount -lt 2) {
-                    $InLoopFlag = $True
-                }
+            # 既定の回数まではリトライする
+            if ($LoopCount -lt 3) {
+                $InLoopFlag = $True
+            } else {
+                throw $_
             }
         }
     }
